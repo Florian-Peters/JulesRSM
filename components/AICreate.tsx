@@ -31,6 +31,7 @@ const AICreate: React.FC<AICreateProps> = ({ onClose, onPost, onGoLive, initialM
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const chunksRef = useRef<Blob[]>([]);
   const timerRef = useRef<number | null>(null);
+  const pressStartTimeRef = useRef<number>(0);
 
   // Kamera starten/stoppen wenn Modus wechselt
   useEffect(() => {
@@ -138,6 +139,25 @@ const AICreate: React.FC<AICreateProps> = ({ onClose, onPost, onGoLive, initialM
   };
   // ----------------------------------------------------
 
+  const handlePressStart = () => {
+    pressStartTimeRef.current = Date.now();
+    startRecording();
+  };
+
+  const handlePressEnd = (e: React.MouseEvent | React.TouchEvent) => {
+    e.preventDefault();
+    const duration = Date.now() - pressStartTimeRef.current;
+
+    if (mediaRecorderRef.current && mediaRecorderRef.current.state === 'recording') {
+       mediaRecorderRef.current.stop();
+    }
+
+    // If tap was short (< 300ms), treat as photo capture
+    if (duration < 300) {
+       captureImage();
+    }
+  };
+
   const startRecording = () => {
     if (!videoPreviewRef.current?.srcObject || !isCameraActive) return;
     const stream = videoPreviewRef.current.srcObject as MediaStream;
@@ -157,6 +177,11 @@ const AICreate: React.FC<AICreateProps> = ({ onClose, onPost, onGoLive, initialM
       };
       
       recorder.onstop = () => {
+        // Ignoriere Video wenn es nur ein Tap war (wird von handlePressEnd behandelt)
+        if (Date.now() - pressStartTimeRef.current < 300) {
+           return;
+        }
+
         const finalType = chunksRef.current[0]?.type || 'video/mp4';
         const blob = new Blob(chunksRef.current, { type: finalType });
         
@@ -271,11 +296,10 @@ const AICreate: React.FC<AICreateProps> = ({ onClose, onPost, onGoLive, initialM
             {isCameraActive && (
               <div className="absolute bottom-12 left-0 right-0 flex flex-col items-center gap-8 z-30">
                 <button 
-                  onMouseDown={startRecording} 
-                  onMouseUp={() => mediaRecorderRef.current?.stop()} 
-                  onTouchStart={startRecording} 
-                  onTouchEnd={() => mediaRecorderRef.current?.stop()} 
-                  onClick={captureImage} 
+                  onMouseDown={handlePressStart}
+                  onMouseUp={handlePressEnd}
+                  onTouchStart={handlePressStart}
+                  onTouchEnd={handlePressEnd}
                   className={`relative w-24 h-24 rounded-full border-4 border-white flex items-center justify-center transition-all active:scale-90 ${isRecording ? 'scale-125' : ''}`}
                 >
                   <div className={`rounded-full transition-all ${isRecording ? 'w-10 h-10 bg-red-600 rounded-lg' : 'w-18 h-18 bg-white/20'}`} />
