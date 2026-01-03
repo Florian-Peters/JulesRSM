@@ -112,7 +112,7 @@ export default function MapTab({ currentUser, onUpdateUser }: MapTabProps) {
             databaseService.toggleGhostMode(true);
         }
       },
-      { enableHighAccuracy: true, maximumAge: 0, timeout: 5000 }
+      { enableHighAccuracy: true, maximumAge: 5000, timeout: 20000 }
     );
 
     return () => {
