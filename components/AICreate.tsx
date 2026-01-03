@@ -27,6 +27,7 @@ const AICreate: React.FC<AICreateProps> = ({ onClose, onPost, onGoLive, initialM
   const [uploadSuccess, setUploadSuccess] = useState(false);
   const [facingMode, setFacingMode] = useState<'user' | 'environment'>('user');
   
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const videoPreviewRef = useRef<HTMLVideoElement>(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const chunksRef = useRef<Blob[]>([]);
@@ -202,6 +203,23 @@ const AICreate: React.FC<AICreateProps> = ({ onClose, onPost, onGoLive, initialM
     }
   };
 
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const url = URL.createObjectURL(file);
+    setMediaUrl(url);
+    setMediaBlob(file);
+
+    // Simple mime type check
+    if (file.type.startsWith('video/')) {
+       setMediaType('video');
+    } else {
+       setMediaType('image');
+    }
+    stopCamera();
+  };
+
   const handlePostAction = async () => {
     if (!mediaBlob) return;
     setIsUploading(true);
@@ -313,10 +331,23 @@ const AICreate: React.FC<AICreateProps> = ({ onClose, onPost, onGoLive, initialM
               <button onClick={onClose} className="p-4 bg-black/40 backdrop-blur-md rounded-full text-white border border-white/10 active:scale-90">
                 <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
               </button>
-              <button onClick={() => setFacingMode(f => f === 'user' ? 'environment' : 'user')} className="p-4 bg-black/40 backdrop-blur-md rounded-full text-white border border-white/10 active:scale-90">
-                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
-              </button>
+
+              <div className="flex gap-4">
+                 <button onClick={() => fileInputRef.current?.click()} className="p-4 bg-black/40 backdrop-blur-md rounded-full text-white border border-white/10 active:scale-90">
+                   <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
+                 </button>
+                 <button onClick={() => setFacingMode(f => f === 'user' ? 'environment' : 'user')} className="p-4 bg-black/40 backdrop-blur-md rounded-full text-white border border-white/10 active:scale-90">
+                   <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
+                 </button>
+              </div>
             </div>
+            <input
+              type="file"
+              ref={fileInputRef}
+              onChange={handleFileUpload}
+              className="hidden"
+              accept="image/*,video/*"
+            />
           </>
         ) : (
           <div className="h-full flex flex-col p-6 overflow-y-auto no-scrollbar">
