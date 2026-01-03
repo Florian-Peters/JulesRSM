@@ -123,6 +123,7 @@ const AICreate: React.FC<AICreateProps> = ({ onClose, onPost, onGoLive, initialM
         setMediaType('image');
 
         // Im Hintergrund zu Blob konvertieren für den Upload
+        setMediaBlob(null); // Reset blob while processing
         fetch(dataUrl)
           .then(res => res.blob())
           .then(blob => setMediaBlob(blob))
@@ -230,10 +231,10 @@ const AICreate: React.FC<AICreateProps> = ({ onClose, onPost, onGoLive, initialM
           />
           <button 
             onClick={handlePostAction} 
-            disabled={isUploading || uploadSuccess} 
+            disabled={isUploading || uploadSuccess || !mediaBlob}
             className={`w-full py-5 rounded-[2rem] font-black uppercase tracking-[0.4em] transition-all active:scale-95 ${uploadSuccess ? 'bg-green-500' : 'bg-[#adff00] text-black'} disabled:opacity-70`}
           >
-            {isUploading ? 'Wird hochgeladen...' : uploadSuccess ? 'Erfolgreich!' : 'Jetzt Jammen'}
+            {isUploading ? 'Wird hochgeladen...' : uploadSuccess ? 'Erfolgreich!' : !mediaBlob ? 'Verarbeite...' : 'Jetzt Jammen'}
           </button>
         </div>
       </div>
