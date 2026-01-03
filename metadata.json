@@ -1,0 +1,11 @@
+{
+  "name": "Real social meet",
+  "description": "A social engagement platform for creators and communities featuring real-world challenges, leaderboards, and viral content discovery.",
+  "requestFramePermissions": [
+    "camera",
+    "microphone",
+    "geolocation",
+    "storage",
+    "photos"
+  ]
+}

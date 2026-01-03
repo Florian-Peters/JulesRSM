@@ -1,0 +1,24 @@
+ext {
+    minSdkVersion = 24
+    compileSdkVersion = 35
+    targetSdkVersion = 35
+
+    // Wir lassen die Variable hier stehen, auch wenn wir sie in build.gradle hardcoded haben
+    androidGradlePluginVersion = '8.7.2'
+
+    // HIER WAREN DIE FEHLER:
+    // Wir nutzen nun stabile Versionen statt der Alpha/Beta-Versionen
+    androidxActivityVersion = '1.9.0'       // Vorher: 1.11.0 (zu neu)
+    androidxAppCompatVersion = '1.7.0'      // Vorher: 1.7.1
+    androidxCoordinatorLayoutVersion = '1.2.0'
+    androidxCoreVersion = '1.13.1'          // Vorher: 1.17.0 (zu neu)
+    androidxFragmentVersion = '1.8.1'       // Vorher: 1.8.9
+
+    // Der Rest ist okay
+    coreSplashScreenVersion = '1.2.0'
+    androidxWebkitVersion = '1.11.0'        // Leicht angepasst auf stabil
+    junitVersion = '4.13.2'
+    androidxJunitVersion = '1.2.1'
+    androidxEspressoCoreVersion = '3.6.1'
+    cordovaAndroidVersion = '13.0.0'        // Etwas konservativer
+}

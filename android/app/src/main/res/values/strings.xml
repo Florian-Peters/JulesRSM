@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Real Social Meet</string>
+    <string name="title_activity_main">Real Social Meet</string>
+    <string name="package_name">com.geojam.clone</string>
+    <string name="custom_url_scheme">com.geojam.clone</string>
+</resources>
