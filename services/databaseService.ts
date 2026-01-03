@@ -312,6 +312,19 @@ export const databaseService = {
     if (error) throw new Error(error.message);
   },
 
+  // Fix: Added missing deletePost method
+  async deletePost(postId: string): Promise<void> {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) throw new Error("Unauthorized");
+
+    // First delete comments and likes to handle foreign key constraints if not set to cascade
+    await supabase.from('comments').delete().eq('post_id', postId);
+    await supabase.from('post_likes').delete().eq('post_id', postId);
+
+    const { error } = await supabase.from('posts').delete().eq('id', postId).eq('user_id', user.id);
+    if (error) throw new Error(stringifyError(error));
+  },
+
   // Fix: Added missing buyPin method
   async buyPin(pinId: string, price: number): Promise<void> {
     const { data: { user } } = await supabase.auth.getUser();

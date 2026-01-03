@@ -27,10 +27,12 @@ const AICreate: React.FC<AICreateProps> = ({ onClose, onPost, onGoLive, initialM
   const [uploadSuccess, setUploadSuccess] = useState(false);
   const [facingMode, setFacingMode] = useState<'user' | 'environment'>('user');
   
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const videoPreviewRef = useRef<HTMLVideoElement>(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const chunksRef = useRef<Blob[]>([]);
   const timerRef = useRef<number | null>(null);
+  const pressStartTimeRef = useRef<number>(0);
 
   // Kamera starten/stoppen wenn Modus wechselt
   useEffect(() => {
@@ -138,6 +140,25 @@ const AICreate: React.FC<AICreateProps> = ({ onClose, onPost, onGoLive, initialM
   };
   // ----------------------------------------------------
 
+  const handlePressStart = () => {
+    pressStartTimeRef.current = Date.now();
+    startRecording();
+  };
+
+  const handlePressEnd = (e: React.MouseEvent | React.TouchEvent) => {
+    e.preventDefault();
+    const duration = Date.now() - pressStartTimeRef.current;
+
+    if (mediaRecorderRef.current && mediaRecorderRef.current.state === 'recording') {
+       mediaRecorderRef.current.stop();
+    }
+
+    // If tap was short (< 300ms), treat as photo capture
+    if (duration < 300) {
+       captureImage();
+    }
+  };
+
   const startRecording = () => {
     if (!videoPreviewRef.current?.srcObject || !isCameraActive) return;
     const stream = videoPreviewRef.current.srcObject as MediaStream;
@@ -157,6 +178,11 @@ const AICreate: React.FC<AICreateProps> = ({ onClose, onPost, onGoLive, initialM
       };
       
       recorder.onstop = () => {
+        // Ignoriere Video wenn es nur ein Tap war (wird von handlePressEnd behandelt)
+        if (Date.now() - pressStartTimeRef.current < 300) {
+           return;
+        }
+
         const finalType = chunksRef.current[0]?.type || 'video/mp4';
         const blob = new Blob(chunksRef.current, { type: finalType });
         
@@ -175,6 +201,23 @@ const AICreate: React.FC<AICreateProps> = ({ onClose, onPost, onGoLive, initialM
       console.error("Recording failed:", e);
       alert("Videoaufnahme konnte nicht gestartet werden.");
     }
+  };
+
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const url = URL.createObjectURL(file);
+    setMediaUrl(url);
+    setMediaBlob(file);
+
+    // Simple mime type check
+    if (file.type.startsWith('video/')) {
+       setMediaType('video');
+    } else {
+       setMediaType('image');
+    }
+    stopCamera();
   };
 
   const handlePostAction = async () => {
@@ -201,7 +244,7 @@ const AICreate: React.FC<AICreateProps> = ({ onClose, onPost, onGoLive, initialM
       <div className="fixed inset-0 bg-black z-[1000] flex flex-col pt-[env(safe-area-inset-top)]">
         <div className="flex-1 relative overflow-hidden bg-zinc-900 flex items-center justify-center">
           {mediaType === 'video' ? (
-            <video src={mediaUrl} autoPlay loop playsInline className="w-full h-full object-cover" />
+            <video src={mediaUrl} controls autoPlay loop playsInline className="w-full h-full object-contain bg-black" />
           ) : (
             <img src={mediaUrl} className="w-full h-full object-cover" alt="Captured" />
           )}
@@ -271,11 +314,10 @@ const AICreate: React.FC<AICreateProps> = ({ onClose, onPost, onGoLive, initialM
             {isCameraActive && (
               <div className="absolute bottom-12 left-0 right-0 flex flex-col items-center gap-8 z-30">
                 <button 
-                  onMouseDown={startRecording} 
-                  onMouseUp={() => mediaRecorderRef.current?.stop()} 
-                  onTouchStart={startRecording} 
-                  onTouchEnd={() => mediaRecorderRef.current?.stop()} 
-                  onClick={captureImage} 
+                  onMouseDown={handlePressStart}
+                  onMouseUp={handlePressEnd}
+                  onTouchStart={handlePressStart}
+                  onTouchEnd={handlePressEnd}
                   className={`relative w-24 h-24 rounded-full border-4 border-white flex items-center justify-center transition-all active:scale-90 ${isRecording ? 'scale-125' : ''}`}
                 >
                   <div className={`rounded-full transition-all ${isRecording ? 'w-10 h-10 bg-red-600 rounded-lg' : 'w-18 h-18 bg-white/20'}`} />
@@ -289,10 +331,23 @@ const AICreate: React.FC<AICreateProps> = ({ onClose, onPost, onGoLive, initialM
               <button onClick={onClose} className="p-4 bg-black/40 backdrop-blur-md rounded-full text-white border border-white/10 active:scale-90">
                 <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
               </button>
-              <button onClick={() => setFacingMode(f => f === 'user' ? 'environment' : 'user')} className="p-4 bg-black/40 backdrop-blur-md rounded-full text-white border border-white/10 active:scale-90">
-                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
-              </button>
+
+              <div className="flex gap-4">
+                 <button onClick={() => fileInputRef.current?.click()} className="p-4 bg-black/40 backdrop-blur-md rounded-full text-white border border-white/10 active:scale-90">
+                   <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
+                 </button>
+                 <button onClick={() => setFacingMode(f => f === 'user' ? 'environment' : 'user')} className="p-4 bg-black/40 backdrop-blur-md rounded-full text-white border border-white/10 active:scale-90">
+                   <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
+                 </button>
+              </div>
             </div>
+            <input
+              type="file"
+              ref={fileInputRef}
+              onChange={handleFileUpload}
+              className="hidden"
+              accept="image/*,video/*"
+            />
           </>
         ) : (
           <div className="h-full flex flex-col p-6 overflow-y-auto no-scrollbar">
