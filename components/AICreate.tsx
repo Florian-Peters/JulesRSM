@@ -226,7 +226,7 @@ const AICreate: React.FC<AICreateProps> = ({ onClose, onPost, onGoLive, initialM
       <div className="fixed inset-0 bg-black z-[1000] flex flex-col pt-[env(safe-area-inset-top)]">
         <div className="flex-1 relative overflow-hidden bg-zinc-900 flex items-center justify-center">
           {mediaType === 'video' ? (
-            <video src={mediaUrl} autoPlay loop playsInline className="w-full h-full object-cover" />
+            <video src={mediaUrl} controls autoPlay loop playsInline className="w-full h-full object-contain bg-black" />
           ) : (
             <img src={mediaUrl} className="w-full h-full object-cover" alt="Captured" />
           )}
